@@ -81,10 +81,13 @@
                   <div id="external-events">
 
                     <cfoutput query="allEvents">
-                      <div class="external-event" style="background-color: #COLOR#;" data-id="#ID#">
+                      <cfif #EVENT_DATE# eq "">
+                        <div class="external-event" style="background-color: #COLOR#;" data-id="#ID#">
                           #NAME#
                           <button class="btn btn-sm float-right delete-event" data-id="#ID#">X</button>
                       </div>
+                      </cfif>
+
                   </cfoutput>
 
                   <cfif allEvents.recordCount EQ 0>
@@ -252,15 +255,23 @@
       new Draggable(containerEl, {
       itemSelector: '.external-event',
       eventData: function(eventEl) {
+        // Extract text without including the delete button's text (X)
+        var title = $(eventEl).contents().filter(function() {
+            return this.nodeType === 3;  // Only select the text node
+        }).text().trim();
+
         return {
-          title: eventEl.innerText,
+          title: title,
           backgroundColor: window.getComputedStyle( eventEl ,null).getPropertyValue('background-color'),
           borderColor: window.getComputedStyle( eventEl ,null).getPropertyValue('background-color'),
           textColor: window.getComputedStyle( eventEl ,null).getPropertyValue('color'),
         };
       }
     });
-    
+    <cfinvoke component="EventService"
+    method="retrieveEvents"
+    returnvariable="allEvents">
+  </cfinvoke>
       var calendar = new Calendar(calendarEl, {
           headerToolbar: {
               left: 'prev,next today',
@@ -270,6 +281,18 @@
           themeSystem: 'bootstrap',
           editable: true,
           droppable: true, // Allows dragging from the external list
+          events: [
+        // Output events from the server
+        <cfoutput query="allEvents">
+            {
+                id: "#ID#",
+                title: "#NAME#",
+                start: "#dateFormat(EVENT_DATE, 'yyyy-MM-dd')#", // Single event_date field
+                backgroundColor: "#COLOR#",
+                borderColor: "#COLOR#",
+            },
+        </cfoutput>
+    ],
           drop: function(info) {
             var eventDate = info.dateStr; // Get the dropped date as a string (YYYY-MM-DD format)
             var eventId = info.draggedEl.getAttribute('data-id'); // Get the ID of the dragged event
@@ -299,25 +322,32 @@
       calendar.render();
   
       // Function to initialize the external events as draggable
-      function ini_events(ele) {
-          ele.each(function() {
-              // Create a jQuery UI draggable event
-              $(this).data('event', {
-                  title: $.trim($(this).text()),  // Use the element's text as the event title
-                  id: $(this).attr('data-id'),  // Assign the event ID
-                  backgroundColor: $(this).css('background-color'),  // Preserve color
-                  borderColor: $(this).css('border-color'),  // Preserve border color
-                  textColor: '#fff'  // Set text color
-              });
-  
-              // Make the event draggable using jQuery UI
-              $(this).draggable({
-                  zIndex: 1070,
-                  revert: true, // Will cause the event to revert back to its original position after drop
-                  revertDuration: 0
-              });
-          });
-      }
+      function ini_events(ele) { 
+    ele.each(function() {
+      var title = $(this).contents().filter(function() {
+          return this.nodeType === 3;  // Get only the text node
+        }).text().trim();
+
+        // Make the event draggable using jQuery UI
+        $(this).data('event', {
+          title: title,  // Use only the event name text
+            id: $(this).attr('data-id'),  // Assign the event ID
+            backgroundColor: $(this).css('background-color'),  // Preserve color
+            borderColor: $(this).css('border-color'),  // Preserve border color
+            textColor: '#fff'  // Set text color
+        });
+
+        // Make the event draggable using jQuery UI
+        $(this).draggable({
+            zIndex: 1070,
+            revert: true, // Will cause the event to revert back to its original position after drop
+            revertDuration: 0
+        });
+    });
+}
+
+
+
       ini_events($('#external-events div.external-event'))
 
   });
