@@ -67,6 +67,27 @@
         <cfreturn response>
     </cffunction>
     
+    <cffunction name="updateEventDate" access="remote" returntype="struct">
+        <cfargument name="id" type="numeric" required="true">
+        <cfargument name="newDate" type="date" required="true">
+    
+        <!-- Initialize a struct for the response -->
+        <cfset var response = {}>
+    
+        <!-- Update the event's date in the database -->
+        <cfquery datasource="CalendarEvent">
+            UPDATE events 
+            SET event_date = <cfqueryparam value="#arguments.newDate#" cfsqltype="cf_sql_date">
+            WHERE id = <cfqueryparam value="#arguments.id#" cfsqltype="cf_sql_integer">
+        </cfquery>
+    
+        <!-- Populate the response struct with a success message -->
+        <cfset response.message = "Event date updated successfully">
+        
+        <!-- Return the response struct -->
+        <cfreturn response>
+    </cffunction>
+    
 
     
 </cfcomponent>

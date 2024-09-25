@@ -98,10 +98,10 @@
                       </cfoutput>
                   </cfif>
                     <div class="checkbox">
-                      <label for="drop-remove">
+                      <!---<label for="drop-remove">
                         <input type="checkbox" id="drop-remove">
                         remove after drop
-                      </label>
+                      </label>--->
                     </div>
                   </div>
                 </div>
@@ -270,13 +270,30 @@
           themeSystem: 'bootstrap',
           editable: true,
           droppable: true, // Allows dragging from the external list
-          drop      : function(info) {
-        // is the "remove after drop" checkbox checked?
-        if (checkbox.checked) {
-          // if so, remove the element from the "Draggable Events" list
-          info.draggedEl.parentNode.removeChild(info.draggedEl);
+          drop: function(info) {
+            var eventDate = info.dateStr; // Get the dropped date as a string (YYYY-MM-DD format)
+            var eventId = info.draggedEl.getAttribute('data-id'); // Get the ID of the dragged event
+            
+            // AJAX request to update the event's date in the database
+            $.ajax({
+                url: 'EventService.cfc?method=updateEventDate',
+                type: 'POST',
+                data: {
+                    id: eventId,
+                    newDate: eventDate
+                },
+                success: function(response) {
+                    console.log("Event updated successfully");
+                },
+                error: function(xhr, status, error) {
+                    alert("Error: " + error);
+                }
+            });
+            
+            // Remove the event from the external events list if the checkbox is checked
+                info.draggedEl.parentNode.removeChild(info.draggedEl);
+            
         }
-      }
       });
   
       calendar.render();
