@@ -25,6 +25,24 @@
       padding: 20px !important;
     }
 
+    .header-banner {
+        background-color: #5a4b41;
+        color: white;
+        padding: 30px 0;
+        text-align: center;
+        border-bottom: 4px solid #e2ceb5; /* Slight golden divider */
+      }
+      .header-banner h1 {
+        margin: 0;
+        font-size: 2.5rem;
+        font-family: 'Arial', sans-serif;
+        letter-spacing: 1.5px;
+      }
+      .header-banner p {
+        font-size: 1.2rem;
+        color: #e2ceb5;
+      }
+
   </style>
 </head>
 <body class="hold-transition sidebar-mini">
@@ -33,8 +51,13 @@
   <!-- Content Wrapper. Contains page content -->
   <div class="content-wrapper">
     <section class="content-header">
-      <div class="container-fluid">
-        <h1 class="text-center">Calendar</h1>
+      <div class="header-banner">
+        <h1>      
+          Calendar
+        </h1>
+        <p>
+          Manage your day !
+        </p>
       </div>
     </section>
     <!-- Main content -->
@@ -123,130 +146,118 @@
 <!-- fullCalendar 2.2.5 -->
 <script src="./plugins/moment/moment.min.js"></script>
 <script src="./plugins/fullcalendar/main.js"></script>
-<!-- AdminLTE for demo purposes -->
-<script src="./dist/js/demo.js"></script>
 <!-- Page specific script -->
 <script>
-  $(function () {
+  $(document).ready(function() {
+  
+      // Color picker and event creation
+      var currColor = '#3c8dbc';  // Default color for new events
+  
+      // Color chooser button behavior
+      $('#color-chooser > li > a').click(function(e) {
+          e.preventDefault();
+          currColor = $(this).css('color'); // Set current color from chooser
+          $('#add-new-event').css({
+              'background-color': currColor,
+              'border-color': currColor
+          });
+      });
+  
+      // Add new event button click handler
+      $('#add-new-event').click(function(e) {
+          e.preventDefault();
+          var eventName = $('#new-event').val();
+          if (eventName.length == 0) {
+              return; // Do nothing if no name is entered
+          }
 
-    /* initialize the external events
-     -----------------------------------------------------------------*/
-    function ini_events(ele) {
-      ele.each(function () {
+          // AJAX request to add the event with color
+          $.ajax({
+              url: 'EventService.cfc?method=addEvent',
+              type: 'POST',
+              data: {
+                  name: eventName,
+                  color: currColor  // Send selected color
+              },
+              success: function(response) {
+                  // Parse the response to handle the returned struct
+                  const parsedResponse = JSON.parse(response);
 
-        // create an Event Object (https://fullcalendar.io/docs/event-object)
-        // it doesn't need to have a start or end
-        var eventObject = {
-          title: $.trim($(this).text()) // use the element's text as the event title
-        }
+                  // Check if the event was added successfully
+                  if (parsedResponse.eventId) {
+                      // Add new event element to the external events list
+                      var event = $('<div />')
+                          .css({
+                              'background-color': parsedResponse.color,
+                              'border-color': parsedResponse.color,
+                              'color': '#fff'
+                          })
+                          .addClass('external-event')
+                          .text(parsedResponse.name) // Use the event name from the response
+                          .attr('data-id', parsedResponse.eventId); // Use the returned event ID
 
-        // store the Event Object in the DOM element so we can get to it later
-        $(this).data('eventObject', eventObject)
+                      // Add a delete button (X)
+                      event.append('<span class="delete-event">X</span>');
+                      $('#external-events').prepend(event);
 
-        // make the event draggable using jQuery UI
-        $(this).draggable({
-          zIndex        : 1070,
-          revert        : true, // will cause the event to go back to its
-          revertDuration: 0  //  original position after the drag
-        })
+                      // Reinitialize drag for the new event
+                      ini_events(event);
+                      $('#new-event').val(''); // Clear the input field
+                  } else {
+                      // Handle the case where the event was not added successfully
+                      alert("Error: Unable to add event. Please try again.");
+                  }
+              },
+              error: function(xhr, status, error) {
+                  alert("Error: " + error);
+              }
+          });
+      });
 
-      })
-    }
+  
+      // Initialize FullCalendar
+      var calendarEl = document.getElementById('calendar');
+      var calendar = new FullCalendar.Calendar(calendarEl, {
+          headerToolbar: {
+              left: 'prev,next today',
+              center: 'title',
+              right: 'dayGridMonth,timeGridWeek,timeGridDay'
+          },
+          editable: true,
+          droppable: true, // Allows dragging from the external list
+          events: function(fetchInfo, successCallback, failureCallback) {
 
-    ini_events($('#external-events div.external-event'))
+          },
+          eventClick: function(info) {
 
-    /* initialize the calendar
-     -----------------------------------------------------------------*/
-    //Date for the calendar events (dummy data)
-    var date = new Date()
-    var d    = date.getDate(),
-        m    = date.getMonth(),
-        y    = date.getFullYear()
-
-    var Calendar = FullCalendar.Calendar;
-    var Draggable = FullCalendar.Draggable;
-
-    var containerEl = document.getElementById('external-events');
-    var checkbox = document.getElementById('drop-remove');
-    var calendarEl = document.getElementById('calendar');
-
-    // initialize the external events
-    // -----------------------------------------------------------------
-
-    new Draggable(containerEl, {
-      itemSelector: '.external-event',
-      eventData: function(eventEl) {
-        return {
-          title: eventEl.innerText,
-          backgroundColor: window.getComputedStyle( eventEl ,null).getPropertyValue('background-color'),
-          borderColor: window.getComputedStyle( eventEl ,null).getPropertyValue('background-color'),
-          textColor: window.getComputedStyle( eventEl ,null).getPropertyValue('color'),
-        };
+          }
+      });
+  
+      calendar.render();
+  
+      // Function to initialize the external events as draggable
+      function ini_events(ele) {
+          ele.each(function() {
+              // Create a jQuery UI draggable event
+              $(this).data('event', {
+                  title: $.trim($(this).text()),  // Use the element's text as the event title
+                  id: $(this).attr('data-id'),  // Assign the event ID
+                  backgroundColor: $(this).css('background-color'),  // Preserve color
+                  borderColor: $(this).css('border-color'),  // Preserve border color
+                  textColor: '#fff'  // Set text color
+              });
+  
+              // Make the event draggable using jQuery UI
+              $(this).draggable({
+                  zIndex: 1070,
+                  revert: true, // Will cause the event to revert back to its original position after drop
+                  revertDuration: 0
+              });
+          });
       }
-    });
-
-    var calendar = new Calendar(calendarEl, {
-      headerToolbar: {
-        left  : 'prev,next today',
-        center: 'title',
-        right : 'dayGridMonth,timeGridWeek,timeGridDay'
-      },
-      themeSystem: 'bootstrap',
-      //Random default events
-      events: [
-      ],
-      editable  : true,
-      droppable : true, // this allows things to be dropped onto the calendar !!!
-      drop      : function(info) {
-        // is the "remove after drop" checkbox checked?
-        if (checkbox.checked) {
-          // if so, remove the element from the "Draggable Events" list
-          info.draggedEl.parentNode.removeChild(info.draggedEl);
-        }
-      }
-    });
-
-    calendar.render();
-    // $('#calendar').fullCalendar()
-
-    /* ADDING EVENTS */
-    var currColor = '#3c8dbc' //Red by default
-    // Color chooser button
-    $('#color-chooser > li > a').click(function (e) {
-      e.preventDefault()
-      // Save color
-      currColor = $(this).css('color')
-      // Add color effect to button
-      $('#add-new-event').css({
-        'background-color': currColor,
-        'border-color'    : currColor
-      })
-    })
-    $('#add-new-event').click(function (e) {
-      e.preventDefault()
-      // Get value and make sure it is not null
-      var val = $('#new-event').val()
-      if (val.length == 0) {
-        return
-      }
-
-      // Create events
-      var event = $('<div />')
-      event.css({
-        'background-color': currColor,
-        'border-color'    : currColor,
-        'color'           : '#fff'
-      }).addClass('external-event')
-      event.text(val)
-      $('#external-events').prepend(event)
-
-      // Add draggable funtionality
-      ini_events(event)
-
-      // Remove event from text input
-      $('#new-event').val('')
-    })
-  })
-</script>
+  });
+  </script>
+  
+  
 </body>
 </html>
