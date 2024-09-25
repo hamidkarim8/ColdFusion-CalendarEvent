@@ -49,6 +49,24 @@
     </cffunction>
     
     
+    <cffunction name="deleteEvent" access="remote" returntype="struct">
+        <cfargument name="id" type="numeric" required="true">
+    
+        <!-- Initialize a struct for the response -->
+        <cfset var response = {}>
+        
+        <!-- Delete the event from the database -->
+        <cfquery datasource="CalendarEvent">
+            DELETE FROM events WHERE id = <cfqueryparam value="#arguments.id#" cfsqltype="cf_sql_integer">
+        </cfquery>
+    
+        <!-- Populate the response struct with a success message -->
+        <cfset response.message = "Event deleted successfully">
+        
+        <!-- Return the response struct -->
+        <cfreturn response>
+    </cffunction>
+    
 
     
 </cfcomponent>

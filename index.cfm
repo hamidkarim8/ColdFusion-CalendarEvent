@@ -79,17 +79,30 @@
                 <div class="card-body">
                   <!-- the events -->
                   <div id="external-events">
+
                     <cfoutput query="allEvents">
-                      <div class="external-event" style="background-color: #COLOR#;">
-                        #NAME#
+                      <div class="external-event" style="background-color: #COLOR#;" data-id="#ID#">
+                          #NAME#
+                          <button class="btn btn-sm float-right delete-event" data-id="#ID#">X</button>
                       </div>
-                    </cfoutput>
-                    <div class="checkbox">
+                  </cfoutput>
+
+                  <cfif allEvents.recordCount EQ 0>
+                      <cfoutput>
+                        <hr/>
+
+                        No event found.
+
+                        <hr/>
+
+                      </cfoutput>
+                  </cfif>
+                    <!---<div class="checkbox">
                       <label for="drop-remove">
                         <input type="checkbox" id="drop-remove">
                         remove after drop
                       </label>
-                    </div>
+                    </div>--->
                   </div>
                 </div>
                 <!-- /.card-body -->
@@ -197,6 +210,28 @@
               }
           });
       });
+
+      $(document).on('click', '.delete-event', function() {
+        var eventId = $(this).data('id');
+        var eventElement = $(this).closest('.external-event'); // Get the event element
+
+        // AJAX request to delete the event
+        $.ajax({
+            url: 'EventService.cfc?method=deleteEvent',
+            type: 'POST',
+            data: {
+                id: eventId
+            },
+            success: function(response) {
+                // If successful, remove the event element from the list
+                eventElement.remove();
+                location.reload();
+            },
+            error: function(xhr, status, error) {
+                alert("Error: " + error);
+            }
+        });
+    });
 
       /* initialize the calendar
      -----------------------------------------------------------------*/
