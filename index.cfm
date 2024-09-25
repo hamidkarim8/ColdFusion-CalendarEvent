@@ -60,6 +60,12 @@
         </p>
       </div>
     </section>
+
+    <cfinvoke component="EventService"
+    method="retrieveEvents"
+    returnvariable="allEvents">
+  </cfinvoke>
+
     <!-- Main content -->
     <section class="content">
       <div class="container-fluid">
@@ -73,6 +79,11 @@
                 <div class="card-body">
                   <!-- the events -->
                   <div id="external-events">
+                    <cfoutput query="allEvents">
+                      <div class="external-event" style="background-color: #COLOR#;">
+                        #NAME#
+                      </div>
+                    </cfoutput>
                     <div class="checkbox">
                       <label for="drop-remove">
                         <input type="checkbox" id="drop-remove">
@@ -95,7 +106,6 @@
                       <li><a class="text-warning" href="#"><i class="fas fa-square"></i></a></li>
                       <li><a class="text-success" href="#"><i class="fas fa-square"></i></a></li>
                       <li><a class="text-danger" href="#"><i class="fas fa-square"></i></a></li>
-                      <li><a class="text-muted" href="#"><i class="fas fa-square"></i></a></li>
                     </ul>
                   </div>
                   <!-- /btn-group -->
@@ -151,7 +161,7 @@
   $(document).ready(function() {
   
       // Color picker and event creation
-      var currColor = '#3c8dbc';  // Default color for new events
+      var currColor = '#fff';  // Default color for new events
   
       // Color chooser button behavior
       $('#color-chooser > li > a').click(function(e) {
@@ -180,33 +190,7 @@
                   color: currColor  // Send selected color
               },
               success: function(response) {
-                  // Parse the response to handle the returned struct
-                  const parsedResponse = JSON.parse(response);
-
-                  // Check if the event was added successfully
-                  if (parsedResponse.eventId) {
-                      // Add new event element to the external events list
-                      var event = $('<div />')
-                          .css({
-                              'background-color': parsedResponse.color,
-                              'border-color': parsedResponse.color,
-                              'color': '#fff'
-                          })
-                          .addClass('external-event')
-                          .text(parsedResponse.name) // Use the event name from the response
-                          .attr('data-id', parsedResponse.eventId); // Use the returned event ID
-
-                      // Add a delete button (X)
-                      event.append('<span class="delete-event">X</span>');
-                      $('#external-events').prepend(event);
-
-                      // Reinitialize drag for the new event
-                      ini_events(event);
-                      $('#new-event').val(''); // Clear the input field
-                  } else {
-                      // Handle the case where the event was not added successfully
-                      alert("Error: Unable to add event. Please try again.");
-                  }
+                location.reload();
               },
               error: function(xhr, status, error) {
                   alert("Error: " + error);
@@ -214,23 +198,51 @@
           });
       });
 
-  
+      /* initialize the calendar
+     -----------------------------------------------------------------*/
+    //Date for the calendar events (dummy data)
+    var date = new Date()
+    var d    = date.getDate(),
+        m    = date.getMonth(),
+        y    = date.getFullYear()
+
+    var Calendar = FullCalendar.Calendar;
+    var Draggable = FullCalendar.Draggable;
+
+    var containerEl = document.getElementById('external-events');
+    var checkbox = document.getElementById('drop-remove');
+    var calendarEl = document.getElementById('calendar');
+
       // Initialize FullCalendar
-      var calendarEl = document.getElementById('calendar');
-      var calendar = new FullCalendar.Calendar(calendarEl, {
+
+      new Draggable(containerEl, {
+      itemSelector: '.external-event',
+      eventData: function(eventEl) {
+        return {
+          title: eventEl.innerText,
+          backgroundColor: window.getComputedStyle( eventEl ,null).getPropertyValue('background-color'),
+          borderColor: window.getComputedStyle( eventEl ,null).getPropertyValue('background-color'),
+          textColor: window.getComputedStyle( eventEl ,null).getPropertyValue('color'),
+        };
+      }
+    });
+    
+      var calendar = new Calendar(calendarEl, {
           headerToolbar: {
               left: 'prev,next today',
               center: 'title',
               right: 'dayGridMonth,timeGridWeek,timeGridDay'
           },
+          themeSystem: 'bootstrap',
           editable: true,
           droppable: true, // Allows dragging from the external list
-          events: function(fetchInfo, successCallback, failureCallback) {
-
-          },
-          eventClick: function(info) {
-
-          }
+          drop      : function(info) {
+        // is the "remove after drop" checkbox checked?
+        if (checkbox.checked) {
+          // if so, remove the element from the "Draggable Events" list
+          info.draggedEl.parentNode.removeChild(info.draggedEl);
+        }
+      }
       });
   
       calendar.render();
@@ -255,6 +267,8 @@
               });
           });
       }
+      ini_events($('#external-events div.external-event'))
+
   });
   </script>
   

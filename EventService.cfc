@@ -1,5 +1,21 @@
 <cfcomponent displayname="EventService" output="false">
     
+    <cffunction name="retrieveEvents">
+        <cftry>
+            <cfquery name="getEvent" returntype="query" datasource="CalendarEvent">
+                SELECT * FROM events
+            </cfquery>
+            
+            <!---<cfdump var="#getEvent#" label="Event Retrieved" display="true">--->
+            
+            <cfreturn getEvent>
+            <cfcatch>
+                <cfoutput>Error: #cfcatch.message#</cfoutput>
+                <cfreturn "" />
+            </cfcatch>
+        </cftry>
+    </cffunction>
+
     <cffunction name="addEvent" access="remote" returntype="struct">
         <cfargument name="name" type="string" required="true">
         <cfargument name="color" type="string" required="true">
