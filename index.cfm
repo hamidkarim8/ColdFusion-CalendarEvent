@@ -97,12 +97,12 @@
 
                       </cfoutput>
                   </cfif>
-                    <!---<div class="checkbox">
+                    <div class="checkbox">
                       <label for="drop-remove">
                         <input type="checkbox" id="drop-remove">
                         remove after drop
                       </label>
-                    </div>--->
+                    </div>
                   </div>
                 </div>
                 <!-- /.card-body -->
@@ -225,7 +225,6 @@
             success: function(response) {
                 // If successful, remove the event element from the list
                 eventElement.remove();
-                location.reload();
             },
             error: function(xhr, status, error) {
                 alert("Error: " + error);
