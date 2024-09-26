@@ -79,9 +79,11 @@
                 <div class="card-body">
                   <!-- the events -->
                   <div id="external-events">
-
+                    <cfset noDateEventCount = 0> 
                     <cfoutput query="allEvents">
                       <cfif #EVENT_DATE# eq "">
+                        <cfset noDateEventCount = noDateEventCount + 1>
+
                         <div class="external-event" style="background-color: #COLOR#;" data-id="#ID#">
                           #NAME#
                           <button class="btn btn-sm float-right delete-event" data-id="#ID#">X</button>
@@ -90,7 +92,7 @@
 
                   </cfoutput>
 
-                  <cfif allEvents.recordCount EQ 0>
+                  <cfif allEvents.recordCount EQ 0 OR noDateEventCount eq 0>
                       <cfoutput>
                         <hr/>
 
