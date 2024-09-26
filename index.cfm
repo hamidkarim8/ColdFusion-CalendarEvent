@@ -174,6 +174,8 @@
 <!-- fullCalendar 2.2.5 -->
 <script src="./plugins/moment/moment.min.js"></script>
 <script src="./plugins/fullcalendar/main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <!-- Page specific script -->
 <script>
   $(document).ready(function() {
@@ -230,6 +232,7 @@
             success: function(response) {
                 // If successful, remove the event element from the list
                 eventElement.remove();
+                location.reload();
             },
             error: function(xhr, status, error) {
                 alert("Error: " + error);
@@ -320,36 +323,89 @@
             
         },
         eventClick: function(info) {
-          // Show a confirmation dialog with the current event title
-          if (confirm('The event is: ' + info.event.title + '. Do you want to update the title?')) {
-            
-            // Prompt the user for a new title
-            var newTitle = prompt('Enter new title:', info.event.title);
-            
-            if (newTitle) {
-              // AJAX request to update the event title in the database
-              $.ajax({
-                url: 'EventService.cfc?method=updateEventTitle',
-                type: 'POST',
-                data: {
-                  id: info.event.id, // Send the event ID
-                  newTitle: newTitle // Send the new title
-                },
-                success: function(response) {
-                  // On success, update the title on the calendar
-                  info.event.setProp('title', newTitle);
-                  console.log('Event title updated successfully.');
-                },
-                error: function(xhr, status, error) {
-                  alert('Error: ' + error);
+          Swal.fire({
+            title: 'Event Title: ' + info.event.title,
+            text: 'Do you want to update or delete the event?',
+            showDenyButton: true,
+            showCancelButton: true,
+            confirmButtonText: 'Update',
+            denyButtonText: 'Delete',
+            cancelButtonText: 'Cancel'
+          }).then((result) => {
+            // If "Update" is clicked
+            if (result.isConfirmed) {
+              var newTitle = prompt('Enter new title:', info.event.title);
+              if (newTitle) {
+                // AJAX request to update the event title
+                $.ajax({
+                  url: 'EventService.cfc?method=updateEventTitle',
+                  type: 'POST',
+                  data: {
+                    id: info.event.id, // Send the event ID
+                    newTitle: newTitle // Send the new title
+                  },
+                  success: function(response) {
+                    // Update the event title on the calendar
+                    info.event.setProp('title', newTitle);
+                    Swal.fire('Updated!', 'The event title has been updated.', 'success');
+                  },
+                  error: function(xhr, status, error) {
+                    Swal.fire('Error', 'There was a problem updating the title.', 'error');
+                  }
+                });
+              }
+            } 
+            // If "Delete" is clicked
+            else if (result.isDenied) {
+              Swal.fire({
+                title: 'Are you sure?',
+                text: "This action will delete the event.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'No, keep it'
+              }).then((deleteResult) => {
+                if (deleteResult.isConfirmed) {
+                  // AJAX request to delete the event
+                  $.ajax({
+                    url: 'EventService.cfc?method=deleteEvent',
+                    type: 'POST',
+                    data: {
+                      id: info.event.id // Send the event ID
+                    },
+                    success: function(response) {
+                      // Remove the event from the calendar
+                      info.event.remove();
+                      Swal.fire('Deleted!', 'The event has been deleted.', 'success');
+                    },
+                    error: function(xhr, status, error) {
+                      Swal.fire('Error', 'There was a problem deleting the event.', 'error');
+                    }
+                  });
                 }
               });
-            } else {
-              // If the user cancels the prompt or leaves it empty, do nothing
-              console.log('Title update canceled.');
             }
-          }
-        }
+          });
+        },
+        eventDrop: function(info) {
+          var newDate = info.event.start.toISOString().split('T')[0];
+
+          // AJAX request to update the event's new date in the database
+          $.ajax({
+              url: 'EventService.cfc?method=updateEventDropDate',
+              type: 'POST',
+              data: {
+                  id: info.event.id,
+                  newDate: newDate // Send the correct date
+              },
+              success: function(response) {
+                  Swal.fire('Updated!', 'The event date has been updated.', 'success');
+              },
+              error: function(xhr, status, error) {
+                  Swal.fire('Error', 'There was a problem updating the date.', 'error');
+              }
+          });
+      }
 
       });
   

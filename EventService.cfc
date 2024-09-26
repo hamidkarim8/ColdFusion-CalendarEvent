@@ -101,6 +101,18 @@
         </cfquery>
       </cffunction>
       
+      <cffunction name="updateEventDropDate" access="remote" returnType="void">
+        <cfargument name="id" type="numeric" required="true">
+        <cfargument name="newDate" type="string" required="true"> 
 
+        <cfset adjustedDate = dateAdd("d", 1, arguments.newDate)>
+
+        <!-- Update the event in the database with the adjusted date -->
+        <cfquery datasource="CalendarEvent">
+            UPDATE events
+            SET EVENT_DATE = <cfqueryparam value="#adjustedDate#" cfsqltype="cf_sql_date">
+            WHERE ID = <cfqueryparam value="#arguments.id#" cfsqltype="cf_sql_numeric">
+        </cfquery>
+    </cffunction>
     
 </cfcomponent>
