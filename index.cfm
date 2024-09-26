@@ -318,7 +318,39 @@
             // Remove the event from the external events list if the checkbox is checked
                 info.draggedEl.parentNode.removeChild(info.draggedEl);
             
+        },
+        eventClick: function(info) {
+          // Show a confirmation dialog with the current event title
+          if (confirm('The event is: ' + info.event.title + '. Do you want to update the title?')) {
+            
+            // Prompt the user for a new title
+            var newTitle = prompt('Enter new title:', info.event.title);
+            
+            if (newTitle) {
+              // AJAX request to update the event title in the database
+              $.ajax({
+                url: 'EventService.cfc?method=updateEventTitle',
+                type: 'POST',
+                data: {
+                  id: info.event.id, // Send the event ID
+                  newTitle: newTitle // Send the new title
+                },
+                success: function(response) {
+                  // On success, update the title on the calendar
+                  info.event.setProp('title', newTitle);
+                  console.log('Event title updated successfully.');
+                },
+                error: function(xhr, status, error) {
+                  alert('Error: ' + error);
+                }
+              });
+            } else {
+              // If the user cancels the prompt or leaves it empty, do nothing
+              console.log('Title update canceled.');
+            }
+          }
         }
+
       });
   
       calendar.render();

@@ -89,5 +89,18 @@
     </cffunction>
     
 
+    <cffunction name="updateEventTitle" access="remote" returntype="void">
+        <cfargument name="id" type="numeric" required="true">
+        <cfargument name="newTitle" type="string" required="true">
+      
+        <!-- Update the event title in the database -->
+        <cfquery datasource="CalendarEvent">
+          UPDATE events
+          SET name = <cfqueryparam value="#arguments.newTitle#" cfsqltype="cf_sql_varchar">
+          WHERE id = <cfqueryparam value="#arguments.id#" cfsqltype="cf_sql_integer">
+        </cfquery>
+      </cffunction>
+      
+
     
 </cfcomponent>
