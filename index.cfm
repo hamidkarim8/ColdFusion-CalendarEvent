@@ -311,6 +311,7 @@
                     newDate: eventDate
                 },
                 success: function(response) {
+                    location.reload();
                     console.log("Event updated successfully");
                 },
                 error: function(xhr, status, error) {
